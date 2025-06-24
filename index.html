@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulado Assistente de TI</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="[https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css](https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css)" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap)');
         body {
             font-family: 'Inter', sans-serif;
             background-color: #e2e8f0; /* Light blue-gray background */
@@ -163,7 +163,7 @@
         }
     </style>
     <!-- MathJax CDN for rendering LaTeX -->
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+    <script id="MathJax-script" async src="[https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js](https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js)"></script>
     <script>
         // MathJax configuration
         window.MathJax = {
@@ -194,7 +194,7 @@
 
         <div id="final-screen" class="final-screen hidden">
             <h2 class="text-green-700">Simulado Concluído!</h2>
-            <p>Você acertou <span id="score-display" class="font-bold text-indigo-600"></span> de <span id="total-questions-display" class="font-bold text-indigo-600"></span> questões.</p>
+            <p>Você acertou <span id="score-display" class="font-bold text-indigo-600"></span> de <span id="total-questions-display" class="font-bold text-indigo-600"></span> questões respondidas.</p>
             <div class="final-screen-buttons">
                 <button id="restart-button" class="action-button">Reiniciar Simulado</button>
                 <button id="export-button" class="action-button bg-gray-600 hover:bg-gray-700">Exportar Perguntas</button>
@@ -824,6 +824,7 @@
 
         function checkAllAnswers() {
             totalScore = 0;
+            let totalAnsweredQuestions = 0; // Nova variável para contar apenas as questões respondidas
             let globalQuestionIndex = 0;
 
             for (const disciplineName in disciplines) {
@@ -849,6 +850,7 @@
                         feedbackDiv.classList.add('incorrect');
                         questionItem.classList.add('border-red-400'); // Add red border for unanswered
                     } else {
+                        totalAnsweredQuestions++; // Incrementa apenas se a questão foi respondida
                         const selectedAnswerText = q.options[selectedOptionIndex];
                         if (selectedAnswerText === q.correct) {
                             totalScore++;
@@ -878,12 +880,12 @@
                 });
             }
             submitAllButton.disabled = true; // Disable the main submit button
-            showFinalResults();
+            showFinalResults(totalAnsweredQuestions); // Pass the count of answered questions
         }
 
-        function showFinalResults() {
+        function showFinalResults(answeredCount) {
             finalScreen.classList.remove('hidden');
-            totalQuestionsDisplay.textContent = allQuestions.length;
+            totalQuestionsDisplay.textContent = answeredCount; // Exibe o número de questões respondidas
             scoreDisplay.textContent = totalScore;
         }
 
