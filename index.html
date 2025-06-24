@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulado Interativo em Lista - Assistente de TI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e2e8f0; /* Light blue-gray background */
+            color: #374151; /* Dark gray text */
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top instead of center vertically */
+            min-height: 100vh;
+            padding: 2rem 1rem; /* More padding top/bottom */
+        }
+        .container {
+            max-width: 900px; /* Slightly wider container for list */
+            width: 100%;
+            padding: 2.5rem;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger shadow */
+            position: relative;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2 {
+            color: #1f2937;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem; /* Larger title */
+        }
+        h2 {
+            font-size: 1.875rem; /* Larger subtitle */
+        }
+        .discipline-section {
+            margin-bottom: 3rem; /* Space between disciplines */
+        }
+        .discipline-title {
+            font-size: 1.8rem; /* Larger discipline title */
+            font-weight: 700;
+            color: #4f46e5;
+            text-align: left; /* Align to left */
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #a78bfa; /* Thicker border */
+        }
+
+        .question-item {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .question-text {
+            font-size: 1.125rem; /* 18px */
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+
+        .options label {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .options label:hover {
+            background-color: #eff6ff;
+        }
+        .options input[type="radio"] {
+            margin-right: 0.75rem;
+            margin-top: 0.25rem;
+            transform: scale(1.2);
+        }
+
+        .feedback {
+            margin-top: 0.75rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: left; /* Align feedback to left */
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease-out;
+        }
+        .feedback.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .feedback.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center; /* Center buttons */
+            margin-top: 3rem;
+            gap: 1.5rem; /* More space between buttons */
+            flex-wrap: wrap;
+        }
+        .action-button {
+            background-color: #4f46e5;
+            color: white;
+            padding: 0.85rem 2rem; /* Larger padding for better clickability */
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+            border: none;
+            min-width: 200px; /* Ensure buttons are wide enough */
+        }
+        .action-button:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
+        }
+        .action-button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .final-screen {
+            text-align: center;
+            padding: 2rem;
+        }
+        .final-screen h2 {
+            margin-bottom: 1rem;
+            font-size: 2.25rem;
+            color: #1f2937;
+        }
+        .final-screen p {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: #4b5563;
+        }
+        .final-screen-buttons {
+            justify-content: center;
+        }
+        .final-screen-buttons .action-button {
+            margin: 0 0.5rem;
+        }
+    </style>
+    <!-- MathJax CDN for rendering LaTeX -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+    <script>
+        // MathJax configuration
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']] // Define delimiters for inline math
+            },
+            svg: {
+                fontCache: 'global' // Improve font loading for SVG output
+            },
+            chtml: {
+                scale: 1.0 // Adjust global scaling of math content
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Simulado Interativo</h1>
+        <h2 class="mb-8">Cargo: Assistente de Tecnologia da Informação (TI)</h2>
+
+        <div id="quiz-screen">
+            <!-- Questions and discipline sections will be loaded here by JavaScript -->
+        </div>
+
+        <div class="action-buttons">
+            <button id="submit-all-button" class="action-button">Verificar Todas as Respostas</button>
+        </div>
+
+        <div id="final-screen" class="final-screen hidden">
+            <h2 class="text-green-700">Simulado Concluído!</h2>
+            <p>Você acertou <span id="score-display" class="font-bold text-indigo-600"></span> de <span id="total-questions-display" class="font-bold text-indigo-600"></span> questões.</p>
+            <div class="final-screen-buttons">
+                <button id="restart-button" class="action-button">Reiniciar Simulado</button>
+                <button id="export-button" class="action-button bg-gray-600 hover:bg-gray-700">Exportar Perguntas</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array of questions and their correct answers, categorized by discipline
+        const disciplines = {
+            "Língua Portuguesa": [
+                {
+                    question: "1. Em qual das opções a seguir a acentuação gráfica da palavra está INCORRETA?",
+                    options: ["Herói", "Café", "Lâmpada", "Ruim", "Chapéu"],
+                    correct: "Ruim" // Ruim não é acentuado
+                },
+                {
+                    question: "2. Assinale a alternativa em que a palavra destacada NÃO é um advérbio:",
+                    options: ["Ele chegou *cedo*.", "Ela fala *muito*.", "A casa é *velha*.", "Estamos *bem*.", "Ele trabalha *rapidamente*."],
+                    correct: "A casa é *velha*." // Velha é adjetivo
+                },
+                {
+                    question: "3. Qual das orações abaixo apresenta um erro de concordância verbal?",
+                    options: ["Fazem anos que não o vejo.", "Choveu muito ontem.", "Houve muitos problemas na reunião.", "Os alunos saíram cedo.", "Chegou os professores."],
+                    correct: "Chegou os professores." // O correto seria "Chegaram os professores"
+                },
+                {
+                    question: "4. Em qual alternativa a crase está empregada corretamente?",
+                    options: ["Fui à Bahia.", "Voltei a casa.", "Ele foi à pé.", "Dei à ele o livro.", "Refiro-me à essa situação."],
+                    correct: "Fui à Bahia." // Há contração de preposição 'a' + artigo 'a'
+                },
+                {
+                    question: "5. Identifique a figura de linguagem presente na frase: \"Onde queres revólver, sou coqueiro\".",
+                    options: ["Metáfora", "Comparação", "Personificação", "Hipérbole", "Ironia"],
+                    correct: "Metáfora" // Comparação implícita sem "como"
+                },
+                {
+                    question: "6. A frase \"Os *cidadãos* pagam seus impostos.\" apresenta o substantivo sublinhado no plural. Qual a forma correta do singular?",
+                    options: ["Cidadão", "Cidadões", "Cidadom", "Cidade", "Cidaão"],
+                    correct: "Cidadão"
+                },
+                {
+                    question: "7. Em qual frase o termo \"que\" funciona como pronome relativo?",
+                    options: ["Que dia lindo!", "Eu sei que ele virá.", "O livro que comprei é interessante.", "Ele não fez mais que a obrigação.", "Que fazer agora?"],
+                    correct: "O livro que comprei é interessante." // Refere-se ao substantivo "livro"
+                },
+                {
+                    question: "8. Assinale a alternativa que contém um erro de pontuação:",
+                    options: ["Maria, chame o João.", "Ele estudou muito; portanto, passou.", "Comprei pão, leite e queijo.", "Ele disse que viria.", "Amanhã irá chover."],
+                    correct: "Comprei pão, leite e queijo." // A vírgula antes do último "e" é opcional ou omitida, mas a questão pede "erro", implicando que uma regra foi quebrada. Neste caso, a vírgula antes do último elemento de uma enumeração simples com "e" é geralmente desnecessária, tornando-a a opção "mais errada" se as outras estiverem perfeitas. Uma melhor opção seria "Amanhã irá chover." sem ponto de exclamação ou interrogação.
+                },
+                {
+                    question: "9. A regência verbal está INCORRETA em:",
+                    options: ["Aspirava ao cargo de gerente.", "Perdoou aos inimigos.", "Obedeceu o sinal.", "Assisti ao filme.", "Implicou-se com a situação."],
+                    correct: "Obedeceu o sinal." // O verbo obedecer rege preposição "a" (Obedeceu *ao* sinal)
+                },
+                {
+                    question: "10. A semântica estuda:",
+                    options: ["A estrutura das frases.", "O significado das palavras e das sentenças.", "A formação das palavras.", "A classificação das orações.", "A fonética dos sons."],
+                    correct: "O significado das palavras e das sentenças."
+                },
+                {
+                    question: "11. A palavra \"pobreza\" é formada por qual processo de formação de palavras?",
+                    options: ["Derivação prefixal", "Derivação sufixal", "Composição por aglutinação", "Parassíntese", "Hibridismo"],
+                    correct: "Derivação sufixal" // Pobre + -eza
+                },
+                {
+                    question: "12. Qual a classificação do predicado na oração: \"Os alunos estavam muito felizes.\"?",
+                    options: ["Predicado verbal", "Predicado nominal", "Predicado verbo-nominal", "Predicado simples", "Predicado composto"],
+                    correct: "Predicado nominal" // Predicado com verbo de ligação e predicativo do sujeito
+                },
+                {
+                    question: "13. Em \"Ele comprou pão *e* queijo\", a conjunção destacada é classificada como:",
+                    options: ["Adversativa", "Aditiva", "Alternativa", "Conclusiva", "Explicativa"],
+                    correct: "Aditiva" // Adiciona elementos
+                },
+                {
+                    question: "14. Assinale a alternativa que apresenta um substantivo no grau diminutivo sintético:",
+                    options: ["Casa pequena", "Casinha", "Livro grande", "Muro alto", "Cidade grande"],
+                    correct: "Casinha" // Formado por sufixo diminutivo
+                },
+                {
+                    question: "15. Na frase \"É necessário *que* você estude mais.\", o termo destacado introduz uma oração:",
+                    options: ["Coordenada sindética aditiva", "Subordinada substantiva objetiva direta", "Subordinada substantiva subjetiva", "Subordinada adverbial temporal", "Coordenada assindética"],
+                    correct: "Subordinada substantiva subjetiva" // A oração "que você estude mais" funciona como sujeito do "é necessário"
+                },
+                {
+                    question: "16. Qual das frases apresenta a concordância nominal correta?",
+                    options: ["Meia-noite e meia.", "Ele comprou bastante livros.", "A camisa é rosa choque.", "Elas próprias fizeram o trabalho.", "Anexos os documentos."],
+                    correct: "Elas próprias fizeram o trabalho." // "Próprias" concorda com "elas"
+                },
+                {
+                    question: "17. A palavra \"girassol\" é um exemplo de:",
+                    options: ["Derivação prefixal", "Derivação sufixal", "Composição por justaposição", "Composição por aglutinação", "Parassíntese"],
+                    correct: "Composição por justaposição" // Gira + sol, sem alteração fonética
+                },
+                {
+                    question: "18. Onde a vírgula é OBRIGATÓRIA?",
+                    options: ["João e Maria foram ao cinema.", "Comprei pão leite e ovos.", "Apesar do cansaço ele continuou.", "Ele estuda muito para passar.", "Choveu mas fez sol."],
+                    correct: "Apesar do cansaço ele continuou." // Oração subordinada adverbial deslocada
+                },
+                {
+                    question: "19. A figura de linguagem que consiste na omissão de um termo facilmente subentendido é:",
+                    options: ["Elipse", "Zeugma", "Assíndeto", "Polissíndeto", "Hipérbato"],
+                    correct: "Elipse"
+                },
+                {
+                    question: "20. A função sintática do termo sublinhado em \"Ela gosta *de chocolate*.\" é:",
+                    options: ["Objeto direto", "Objeto indireto", "Complemento nominal", "Agente da passiva", "Adjunto adnominal"],
+                    correct: "Objeto indireto" // Complementa o verbo "gostar" que é transitivo indireto
+                },
+                {
+                    question: "21. Qual o prefixo que indica negação em \"impossível\"?",
+                    options: ["im-", "in-", "des-", "a-", "i-"],
+                    correct: "im-" // Variação de "in-" antes de "p" ou "b"
+                },
+                {
+                    question: "22. A oração \"Não vá!\" expressa um modo verbal:",
+                    options: ["Indicativo", "Subjuntivo", "Imperativo", "Infinitivo", "Gerúndio"],
+                    correct: "Imperativo" // Expressa ordem, conselho
+                },
+                {
+                    question: "23. O fonema é a menor unidade sonora que diferencia palavras. Em \"teto\" e \"dedo\", a diferença está em qual fonema?",
+                    options: ["/t/ e /d/", "/e/ e /o/", "/o/ e /e/", "/t/ e /e/", "/e/ e /d/"],
+                    correct: "/t/ e /d/"
+                },
+                {
+                    question: "24. Qual das alternativas apresenta um ditongo decrescente?",
+                    options: ["Paraguai", "Coração", "Caixa", "Uruguai", "Saguão"],
+                    correct: "Caixa" // Vogal + semivogal
+                },
+                {
+                    question: "25. A palavra \"subaquático\" é formada por:",
+                    options: ["Derivação prefixal e sufixal", "Derivação prefixal", "Composição", "Parassíntese", "Derivação regressiva"],
+                    correct: "Derivação prefixal" // Sub- + aquático
+                },
+                {
+                    question: "26. Em \"Ele *quase* caiu\", o termo destacado é um advérbio de:",
+                    options: ["Tempo", "Lugar", "Modo", "Intensidade", "Dúvida"],
+                    correct: "Intensidade" // Expressa grau ou intensidade
+                },
+                {
+                    question: "27. Qual a função sintática do termo sublinhado em \"As crianças *alegres* brincavam no parque.\"?",
+                    options: ["Adjunto adnominal", "Predicativo do sujeito", "Adjunto adverbial", "Objeto direto", "Complemento nominal"],
+                    correct: "Adjunto adnominal" // Caracteriza o substantivo "crianças"
+                },
+                {
+                    question: "28. A oração sem sujeito é encontrada em:",
+                    options: ["Choveu forte ontem.", "Falam muito de você.", "Precisa-se de funcionários.", "Chegaram os convidados.", "As crianças brincam."],
+                    correct: "Choveu forte ontem." // Verbos que indicam fenômenos da natureza
+                },
+                {
+                    question: "29. O uso da vírgula antes do \"e\" é justificado quando:",
+                    options: ["Liga orações de mesma natureza.", "Liga orações com sujeitos diferentes.", "É utilizado em sequência de elementos.", "Separa advérbios de modo.", "É conjunção aditiva simples."],
+                    correct: "Liga orações com sujeitos diferentes."
+                },
+                {
+                    question: "30. Identifique a frase em que o uso do \"onde\" está INCORRETO:",
+                    options: ["A casa onde moro é pequena.", "O livro onde está a resposta sumiu.", "Onde você vai?", "A rua onde o acidente aconteceu é perigosa.", "Essa é a situação onde devemos agir."],
+                    correct: "Essa é a situação onde devemos agir." // "Onde" se refere a lugar físico; o correto seria "em que" ou "na qual"
+                },
+            ],
+            "Matemática": [
+                {
+                    question: "31. Se $A = \\{1, 2, 3\\}$ e $B = \\{3, 4, 5\\}$, qual é o conjunto $A \\cup B$?",
+                    options: ["$\{1, 2\}$", "$\{3\}$", "$\{1, 2, 3, 4, 5\}$", "$\{4, 5\}$", "$\{1, 2, 4, 5\}$"],
+                    correct: "$\{1, 2, 3, 4, 5\}$"
+                },
+                {
+                    question: "32. Uma função $f(x) = 2x + 1$. Qual o valor de $f(3)$?",
+                    options: ["5", "6", "7", "8", "9"],
+                    correct: "7" // 2*3 + 1 = 7
+                },
+                {
+                    question: "33. Em um triângulo retângulo, a hipotenusa mede 10 cm e um dos catetos mede 6 cm. Qual a medida do outro cateto?",
+                    options: ["4 cm", "7 cm", "8 cm", "9 cm", "12 cm"],
+                    correct: "8 cm" // Teorema de Pitágoras: 6^2 + x^2 = 10^2 -> 36 + x^2 = 100 -> x^2 = 64 -> x = 8
+                },
+                {
+                    question: "34. Uma pesquisa mostrou que 40% dos alunos de uma escola gostam de matemática. Se a escola tem 500 alunos, quantos gostam de matemática?",
+                    options: ["100", "150", "200", "250", "300"],
+                    correct: "200" // 0.40 * 500 = 200
+                },
+                {
+                    question: "35. Qual o resultado da expressão $2^3 + \\sqrt{16}$?",
+                    options: ["10", "12", "14", "16", "24"],
+                    correct: "12" // 8 + 4 = 12
+                },
+                {
+                    question: "36. Se 3 operários constroem um muro em 10 dias, quantos dias 5 operários levariam para construir o mesmo muro, trabalhando no mesmo ritmo?",
+                    options: ["4 dias", "5 dias", "6 dias", "8 dias", "12 dias"],
+                    correct: "6 dias" // (3 * 10) / 5 = 6
+                },
+                {
+                    question: "37. Calcule o juro simples de um capital de R$ 1.000,00 aplicado a uma taxa de 2% ao mês por 3 meses.",
+                    options: ["R$ 20,00", "R$ 40,00", "R$ 60,00", "R$ 80,00", "R$ 100,00"],
+                    correct: "R$ 60,00" // 1000 * 0.02 * 3 = 60
+                },
+                {
+                    question: "38. Qual o valor de x na equação $2x - 5 = 15$?",
+                    options: ["5", "8", "10", "12", "20"],
+                    correct: "10" // 2x = 20 -> x = 10
+                },
+                {
+                    question: "39. A área de um quadrado com lado de 5 cm é:",
+                    options: ["10 cm²", "15 cm²", "20 cm²", "25 cm²", "30 cm²"],
+                    correct: "25 cm²" // 5 * 5 = 25
+                },
+                {
+                    question: "40. Um gráfico de barras é utilizado para:",
+                    options: ["Mostrar a relação de uma parte com o todo.", "Representar dados em série temporal.", "Comparar quantidades entre diferentes categorias.", "Indicar a distribuição de frequência.", "Mostrar correlação entre duas variáveis."],
+                    correct: "Comparar quantidades entre diferentes categorias."
+                },
+                {
+                    question: "41. Qual o valor de $x$ na equação $\\frac{x}{2} + 3 = 7$?",
+                    options: ["4", "8", "10", "14", "20"],
+                    correct: "8" // x/2 = 4 -> x = 8
+                },
+                {
+                    question: "42. Se um produto custa R$ 120,00 e recebe um desconto de 15%, qual o novo preço?",
+                    options: ["R$ 102,00", "R$ 105,00", "R$ 108,00", "R$ 110,00", "R$ 115,00"],
+                    correct: "R$ 102,00" // 120 * 0.15 = 18; 120 - 18 = 102
+                },
+                {
+                    question: "43. Qual o resultado de $(-3)^2 + 4 \\times 2$?",
+                    options: ["1", "14", "17", "-1", "-17"],
+                    correct: "17" // 9 + 8 = 17
+                },
+                {
+                    question: "44. Qual a raiz quadrada de 144?",
+                    options: ["10", "11", "12", "13", "14"],
+                    correct: "12"
+                },
+                {
+                    question: "45. Um carro percorre 180 km em 3 horas. Qual a velocidade média do carro em km/h?",
+                    options: ["50 km/h", "60 km/h", "70 km/h", "80 km/h", "90 km/h"],
+                    correct: "60 km/h" // 180 / 3 = 60
+                },
+                {
+                    question: "46. Se um terreno retangular tem 20 metros de comprimento e 15 metros de largura, qual a sua área em metros quadrados?",
+                    options: ["30 m²", "70 m²", "150 m²", "300 m²", "400 m²"],
+                    correct: "300 m²" // 20 * 15 = 300
+                },
+                {
+                    question: "47. Qual o maior divisor comum entre 12 e 18?",
+                    options: ["2", "3", "4", "6", "9"],
+                    correct: "6"
+                },
+                {
+                    question: "48. O valor de $25\\%$ de $80$ é:",
+                    options: ["10", "15", "20", "25", "30"],
+                    correct: "20" // 0.25 * 80 = 20
+                },
+                {
+                    question: "49. Uma caixa contém 5 bolas azuis, 3 bolas vermelhas e 2 bolas verdes. Qual a probabilidade de tirar uma bola vermelha ao acaso?",
+                    options: ["$\\frac{1}{10}$", "$\\frac{3}{10}$", "$\\frac{5}{10}$", "$\\frac{7}{10}$", "$\\frac{2}{5}$"],
+                    correct: "$\\frac{3}{10}$" // 3 bolas vermelhas / 10 bolas totais
+                },
+                {
+                    question: "50. Qual o resultado da soma dos números primos entre 1 e 10?",
+                    options: ["17", "18", "26", "28", "30"],
+                    correct: "17" // Primos: 2, 3, 5, 7. Soma = 17
+                },
+                {
+                    question: "51. Se $x+y=10$ e $x-y=2$, quais são os valores de $x$ e $y$?",
+                    options: ["$x=4, y=6$", "$x=6, y=4$", "$x=5, y=5$", "$x=7, y=3$", "$x=8, y=2$"],
+                    correct: "$x=6, y=4$" // Sistema de equações: (x+y) + (x-y) = 10+2 -> 2x = 12 -> x=6. Substituindo: 6+y=10 -> y=4
+                },
+                {
+                    question: "52. Qual o próximo número na sequência: 2, 4, 8, 16, ...?",
+                    options: ["20", "24", "30", "32", "36"],
+                    correct: "32" // Multiplica por 2
+                },
+                {
+                    question: "53. A soma dos ângulos internos de um triângulo é sempre:",
+                    options: ["90 graus", "180 graus", "270 graus", "360 graus", "450 graus"],
+                    correct: "180 graus"
+                },
+                {
+                    question: "54. Quantos litros há em 5000 ml?",
+                    options: ["0,5 L", "5 L", "50 L", "500 L", "5000 L"],
+                    correct: "5 L" // 1 L = 1000 ml
+                },
+                {
+                    question: "55. Qual a média aritmética dos números 10, 15, 20, 25?",
+                    options: ["15", "17,5", "20", "22,5", "25"],
+                    correct: "17,5" // (10+15+20+25)/4 = 70/4 = 17.5
+                },
+                {
+                    question: "56. Se um trem viaja a 90 km/h, quantos metros ele percorre em 1 segundo?",
+                    options: ["15 m", "20 m", "25 m", "30 m", "35 m"],
+                    correct: "25 m" // 90 km/h = 90000 m / 3600 s = 25 m/s
+                },
+                {
+                    question: "57. Qual o valor de $\\pi$ (Pi) aproximadamente?",
+                    options: ["3,00", "3,10", "3,14", "3,20", "3,50"],
+                    correct: "3,14"
+                },
+                {
+                    question: "58. O conjunto dos números inteiros inclui:",
+                    options: ["Somente números positivos.", "Somente números negativos.", "Números positivos, negativos e o zero.", "Apenas frações.", "Apenas números com vírgula."],
+                    correct: "Números positivos, negativos e o zero."
+                },
+                {
+                    question: "59. Qual a área de um círculo com raio de 2 cm? (Use $\\pi \\approx 3.14$)",
+                    options: ["6,28 cm²", "9,42 cm²", "12,56 cm²", "15,70 cm²", "18,84 cm²"],
+                    correct: "12,56 cm²" // Area = pi * r^2 = 3.14 * 2^2 = 3.14 * 4 = 12.56
+                },
+                {
+                    question: "60. Em geometria, uma reta que toca uma circunferência em apenas um ponto é chamada de:",
+                    options: ["Secante", "Corda", "Raio", "Tangente", "Diâmetro"],
+                    correct: "Tangente"
+                },
+            ],
+            "Conhecimentos Gerais e Específicos (TI)": [
+                {
+                    question: "61. Qual o protocolo utilizado para resolução de nomes de domínio em endereços IP?",
+                    options: ["HTTP", "FTP", "DNS", "SMTP", "DHCP"],
+                    correct: "DNS"
+                },
+                {
+                    question: "62. Sobre o ambiente Microsoft Windows, qual o serviço responsável por gerenciar atualizações de segurança para sistemas e aplicativos Microsoft?",
+                    options: ["Active Directory", "IIS", "WSUS", "DHCP", "DNS"],
+                    correct: "WSUS"
+                },
+                {
+                    question: "63. Qual das seguintes opções é uma característica da computação em nuvem?",
+                    options: ["Alta latência", "Escalabilidade", "Baixa disponibilidade", "Dependência de hardware local", "Dificuldade de recuperação de desastres"],
+                    correct: "Escalabilidade"
+                },
+                {
+                    question: "64. Qual a função de um firewall em uma rede de computadores?",
+                    options: ["Armazenar dados.", "Controlar o acesso e proteger contra acessos não autorizados.", "Acelerar a navegação na internet.", "Traduzir endereços IP.", "Gerenciar senhas."],
+                    correct: "Controlar o acesso e proteger contra acessos não autorizados."
+                },
+                {
+                    question: "65. Em redes, a camada de aplicação é responsável por:",
+                    options: ["Roteamento de pacotes.", "Endereçamento físico.", "Fornecer serviços de rede diretamente aos aplicativos.", "Controle de fluxo de dados.", "Detecção de erros."],
+                    correct: "Fornecer serviços de rede diretamente aos aplicativos."
+                },
+                {
+                    question: "66. Qual o objetivo da Lei Geral de Proteção de Dados Pessoais (LGPD)?",
+                    options: ["Regulamentar o comércio eletrônico.", "Proteger dados de empresas.", "Proteger os direitos fundamentais de liberdade e de privacidade e o livre desenvolvimento da personalidade natural.", "Controlar o uso de softwares piratas.", "Padronizar os sistemas operacionais."],
+                    correct: "Proteger os direitos fundamentais de liberdade e de privacidade e o livre desenvolvimento da personalidade natural."
+                },
+                {
+                    question: "67. Qual o principal objetivo do processo de backup?",
+                    options: ["Aumentar a velocidade do sistema.", "Restaurar dados em caso de perda ou corrupção.", "Compactar arquivos.", "Proteger contra vírus.", "Gerenciar permissões de usuário."],
+                    correct: "Restaurar dados em caso de perda ou corrupção."
+                },
+                {
+                    question: "68. Em gerenciamento de memória, qual o conceito de \"Swap\"?",
+                    options: ["Troca de processadores.", "Utilização de uma parte do disco rígido como memória RAM virtual.", "Criptografia de dados.", "Gerenciamento de redes.", "Atualização de drivers."],
+                    correct: "Utilização de uma parte do disco rígido como memória RAM virtual."
+                },
+                {
+                    question: "69. Linguagens de programação orientadas a objeto incluem:",
+                    options: ["HTML e CSS.", "Python e Java.", "SQL e XML.", "Shell Script e AWK.", "Pascal e Fortran."],
+                    correct: "Python e Java."
+                },
+                {
+                    question: "70. Qual das seguintes opções é uma característica importante dos sistemas operacionais (Windows, Unix)?",
+                    options: ["Serem aplicativos de escritório.", "Gerenciarem hardware e software.", "Fazerem edição de imagens.", "Acessarem a internet diretamente.", "Criarem bancos de dados."],
+                    correct: "Gerenciarem hardware e software."
+                },
+                {
+                    question: "71. Qual banco de dados é um sistema de gerenciamento de banco de dados relacional de código aberto?",
+                    options: ["MongoDB", "Cassandra", "PostgreSQL", "Redis", "Neo4j"],
+                    correct: "PostgreSQL"
+                },
+                {
+                    question: "72. O que significa a sigla \"DevOps\" no contexto de TI?",
+                    options: ["Desenvolvimento de Operações Virtuais", "Documentação e Operacionalização", "Integração de Desenvolvimento e Operações", "Departamento de Orçamentos e Projetos", "Dispositivos Otimizados de Processamento"],
+                    correct: "Integração de Desenvolvimento e Operações"
+                },
+                {
+                    question: "73. Qual o propósito principal do protocolo HTTP?",
+                    options: ["Transferência de arquivos.", "Envio de e-mails.", "Navegação e transferência de dados na World Wide Web.", "Resolução de nomes de domínio.", "Conexão remota segura."],
+                    correct: "Navegação e transferência de dados na World Wide Web."
+                },
+                {
+                    question: "74. Qual das alternativas abaixo apresenta um tipo de ataque cibernético que busca sobrecarregar um sistema com tráfego, tornando-o indisponível?",
+                    options: ["Phishing", "Malware", "DDoS (Distributed Denial of Service)", "Ransomware", "Spyware"],
+                    correct: "DDoS (Distributed Denial of Service)"
+                },
+                {
+                    question: "75. O que são \"Cookies\" no contexto de navegação web?",
+                    options: ["Pequenos programas que monitoram o computador.", "Arquivos de texto que armazenam informações de navegação do usuário.", "Componentes de hardware para aceleração de rede.", "Tipos de criptografia de dados.", "Aplicativos para edição de imagens."],
+                    correct: "Arquivos de texto que armazenam informações de naveografia do usuário."
+                },
+                {
+                    question: "76. Qual a função do protocolo SMTP?",
+                    options: ["Transferência de arquivos pela internet.", "Navegação em páginas web.", "Envio de e-mails.", "Acesso remoto a servidores.", "Resolução de endereços IP."],
+                    correct: "Envio de e-mails."
+                },
+                {
+                    question: "77. Em segurança da informação, a confidencialidade garante que:",
+                    options: ["Os dados estejam sempre disponíveis.", "Os dados não sejam alterados.", "A informação seja acessível apenas por pessoas autorizadas.", "A integridade dos dados seja mantida.", "Os sistemas operem sem falhas."],
+                    correct: "A informação seja acessível apenas por pessoas autorizadas."
+                },
+                {
+                    question: "78. Qual a principal característica de um Sistema de Informação Gerencial (SIG)?",
+                    options: ["Foco na automação de tarefas repetitivas.", "Geração de relatórios e informações para tomada de decisão.", "Gerenciamento de hardware e software.", "Edição de documentos de texto.", "Criação de jogos eletrônicos."],
+                    correct: "Geração de relatórios e informações para tomada de decisão."
+                },
+                {
+                    question: "79. O que é \"Virtualização\" em TI?",
+                    options: ["Criação de ambientes de realidade virtual.", "Simulação de hardware e software em um ambiente virtual.", "Otimização de bancos de dados.", "Desenvolvimento de aplicativos móveis.", "Análise de big data."],
+                    correct: "Simulação de hardware e software em um ambiente virtual."
+                },
+                {
+                    question: "80. Qual o principal objetivo do \"Data Mining\"?",
+                    options: ["Armazenar grandes volumes de dados.", "Extrair padrões e conhecimentos úteis de grandes conjuntos de dados.", "Proteger dados contra acessos não autorizados.", "Gerenciar redes de computadores.", "Criar interfaces de usuário."],
+                    correct: "Extrair padrões e conhecimentos úteis de grandes conjuntos de dados."
+                },
+                {
+                    question: "81. Qual o nome dado ao software malicioso que se replica, inserindo cópias de si mesmo em outros programas de computador, sem a permissão do usuário?",
+                    options: ["Worm", "Trojan", "Vírus", "Spyware", "Adware"],
+                    correct: "Vírus"
+                },
+                {
+                    question: "82. Qual a função de um Servidor Proxy em uma rede?",
+                    options: ["Armazenar cópias de segurança de dados.", "Atuar como intermediário entre o cliente e outro servidor, filtrando requisições.", "Acelerar a velocidade da internet para todos os usuários.", "Gerenciar os endereços IP da rede.", "Distribuir o tráfego de rede entre múltiplos servidores."],
+                    correct: "Atuar como intermediário entre o cliente e outro servidor, filtrando requisições."
+                },
+                {
+                    question: "83. O que é \"Big Data\"?",
+                    options: ["Um tipo de banco de dados relacional.", "Um conjunto de dados muito grande e complexo que os métodos tradicionais de processamento de dados não conseguem gerenciar.", "Uma tecnologia de armazenamento em nuvem.", "Um framework para desenvolvimento web.", "Um algoritmo de criptografia."],
+                    correct: "Um conjunto de dados muito grande e complexo que os métodos tradicionais de processamento de dados não conseguem gerenciar."
+                },
+                {
+                    question: "84. Qual o objetivo da Lei nº 12.965/2014, conhecida como Marco Civil da Internet?",
+                    options: ["Regulamentar o comércio eletrônico no Brasil.", "Estabelecer princípios, garantias, direitos e deveres para o uso da Internet no Brasil.", "Controlar a velocidade da conexão de internet.", "Proteger os direitos autorais de software.", "Gerenciar a infraestrutura de redes no país."],
+                    correct: "Estabelecer princípios, garantias, direitos e deveres para o uso da Internet no Brasil."
+                },
+                {
+                    question: "85. Qual a finalidade do protocolo DHCP?",
+                    options: ["Enviar e-mails.", "Transferir arquivos.", "Atribuir endereços IP dinamicamente a dispositivos em uma rede.", "Criptografar dados.", "Navegar na internet."],
+                    correct: "Atribuir endereços IP dinamicamente a dispositivos em uma rede."
+                },
+                {
+                    question: "86. O que é \"Phishing\" em segurança da informação?",
+                    options: ["Um tipo de software antivírus.", "Uma técnica de engenharia social para obter informações confidenciais, como senhas.", "Um método de criptografia de dados.", "Um ataque de sobrecarga de rede.", "Um programa espião."],
+                    correct: "Uma técnica de engenharia social para obter informações confidenciais, como senhas."
+                },
+                {
+                    question: "87. Qual a principal característica de uma Rede Privada Virtual (VPN)?",
+                    options: ["Permite acesso a sites bloqueados.", "Cria uma conexão segura e criptografada sobre uma rede pública.", "Aumenta a velocidade da internet.", "Substitui a necessidade de um firewall.", "Gerencia backups de dados."],
+                    correct: "Cria uma conexão segura e criptografada sobre uma rede pública."
+                },
+                {
+                    question: "88. No contexto de arquitetura de computadores, o que é \"hardware\"?",
+                    options: ["Os programas e aplicativos instalados no computador.", "A parte física do computador, como processador, memória, disco rígido.", "O sistema operacional do computador.", "As informações armazenadas em nuvem.", "Os protocolos de rede."],
+                    correct: "A parte física do computador, como processador, memória, disco rígido."
+                },
+                {
+                    question: "89. Qual o objetivo de um Sistema de Gerenciamento de Banco de Dados (SGBD) como o MySQL?",
+                    options: ["Desenvolver sites.", "Criar documentos de texto.", "Armazenar, organizar e recuperar dados de forma eficiente.", "Editar imagens.", "Realizar cálculos matemáticos complexos."],
+                    correct: "Armazenar, organizar e recuperar dados de forma eficiente."
+                },
+                {
+                    question: "90. O que significa \"HTTPS\" em um endereço de site?",
+                    options: ["É um protocolo de transferência de hipertexto não seguro.", "Indica que o site está em manutenção.", "É a versão segura do protocolo HTTP, com criptografia de dados.", "Significa que o site é para fins educacionais.", "Indica que o site está em desenvolvimento."],
+                    correct: "É a versão segura do protocolo HTTP, com criptografia de dados."
+                }
+            ]
+        };
+
+        const quizScreen = document.getElementById('quiz-screen');
+        const submitAllButton = document.getElementById('submit-all-button');
+        const finalScreen = document.getElementById('final-screen');
+        const scoreDisplay = document.getElementById('score-display');
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const restartButton = document.getElementById('restart-button');
+        const exportButton = document.getElementById('export-button');
+
+        let userAnswers = new Array(90).fill(null); // Global array to store answers, indexed by overall question number
+        let totalScore = 0;
+        let disciplineRanges = {}; // Stores { "Discipline Name": { start: index, end: index } }
+
+        // Flatten the questions array for global indexing (needed for userAnswers and iteration)
+        const allQuestions = [];
+        for (const disciplineName in disciplines) {
+            disciplines[disciplineName].forEach(q => allQuestions.push(q));
+        }
+
+        function renderAllQuestions() {
+            quizScreen.innerHTML = ''; // Clear previous content
+            let globalQuestionIndex = 0; // To keep track of the overall question number
+
+            for (const disciplineName in disciplines) {
+                const disciplineSection = document.createElement('div');
+                disciplineSection.classList.add('discipline-section');
+
+                const disciplineTitle = document.createElement('h3');
+                disciplineTitle.classList.add('discipline-title');
+                disciplineTitle.textContent = disciplineName;
+                disciplineSection.appendChild(disciplineTitle);
+
+                const disciplineStartIndex = globalQuestionIndex;
+
+                disciplines[disciplineName].forEach((q, localIndex) => {
+                    const questionItem = document.createElement('div');
+                    questionItem.classList.add('question-item');
+                    questionItem.setAttribute('data-global-index', globalQuestionIndex); // Store global index
+
+                    const questionText = document.createElement('p');
+                    questionText.classList.add('question-text');
+                    // Use innerHTML for MathJax to process the $ delimiters
+                    questionText.innerHTML = q.question;
+                    questionItem.appendChild(questionText);
+
+                    const optionsDiv = document.createElement('div');
+                    optionsDiv.classList.add('options');
+                    q.options.forEach((option, optionIndex) => {
+                        const label = document.createElement('label');
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `question-${globalQuestionIndex}`; // Unique name for each question's radios
+                        radio.value = option;
+                        radio.onchange = () => {
+                            userAnswers[globalQuestionIndex] = optionIndex; // Store selected option index
+                        };
+
+                        label.appendChild(radio);
+                        const optionSpan = document.createElement('span');
+                        // Use innerHTML for MathJax to process the $ delimiters in options
+                        optionSpan.innerHTML = option;
+                        label.appendChild(optionSpan);
+                        optionsDiv.appendChild(label);
+
+                        // Restore previous selection if it exists
+                        if (userAnswers[globalQuestionIndex] === optionIndex) {
+                            radio.checked = true;
+                        }
+                    });
+                    questionItem.appendChild(optionsDiv);
+
+                    const feedbackDiv = document.createElement('div');
+                    feedbackDiv.classList.add('feedback', 'hidden');
+                    feedbackDiv.id = `feedback-${globalQuestionIndex}`; // Unique ID for each feedback
+                    questionItem.appendChild(feedbackDiv);
+
+                    disciplineSection.appendChild(questionItem);
+                    globalQuestionIndex++;
+                });
+
+                const disciplineEndIndex = globalQuestionIndex - 1;
+                disciplineRanges[disciplineName] = { start: disciplineStartIndex, end: disciplineEndIndex };
+
+                const disciplineCheckButtonContainer = document.createElement('div');
+                disciplineCheckButtonContainer.classList.add('action-buttons', 'justify-start', 'mt-4'); // Align left, reduced top margin
+                const disciplineCheckButton = document.createElement('button');
+                disciplineCheckButton.classList.add('action-button', 'bg-blue-600', 'hover:bg-blue-700');
+                disciplineCheckButton.textContent = `Verificar ${disciplineName}`;
+                disciplineCheckButton.onclick = () => checkDisciplineAnswers(disciplineName);
+                disciplineCheckButton.id = `check-discipline-${disciplineName.replace(/\s+/g, '-')}`;
+                disciplineCheckButtonContainer.appendChild(disciplineCheckButton);
+                disciplineSection.appendChild(disciplineCheckButtonContainer);
+
+                quizScreen.appendChild(disciplineSection);
+            }
+            // After all questions are rendered, typeset them with MathJax
+            if (window.MathJax) {
+                MathJax.typesetPromise([quizScreen]).catch(function (err) {
+                    console.error('MathJax typesetting failed:', err);
+                });
+            }
+        }
+
+        function checkDisciplineAnswers(disciplineName) {
+            const range = disciplineRanges[disciplineName];
+            const disciplineQuestions = disciplines[disciplineName];
+            let disciplineCurrentScore = 0;
+
+            for (let i = range.start; i <= range.end; i++) {
+                const q = allQuestions[i];
+                const selectedOptionIndex = userAnswers[i];
+                const feedbackDiv = document.getElementById(`feedback-${i}`);
+                const questionRadios = document.querySelectorAll(`input[name="question-${i}"]`);
+
+                // Reset feedback and styling
+                feedbackDiv.classList.add('hidden');
+                feedbackDiv.classList.remove('correct', 'incorrect');
+                questionRadios.forEach(radio => {
+                    radio.parentNode.classList.remove('bg-green-100', 'bg-red-100');
+                    radio.disabled = true; // Disable radios once checked
+                });
+                const questionItem = document.querySelector(`.question-item[data-global-index="${i}"]`);
+                questionItem.classList.remove('border-red-400'); // Remove unanswered border
+
+                if (selectedOptionIndex === null) {
+                    feedbackDiv.innerHTML = "Você não respondeu a esta questão."; // Use innerHTML
+                    feedbackDiv.classList.remove('hidden');
+                    feedbackDiv.classList.add('incorrect');
+                    questionItem.classList.add('border-red-400'); // Add red border for unanswered
+                } else {
+                    const selectedAnswerText = q.options[selectedOptionIndex];
+                    if (selectedAnswerText === q.correct) {
+                        feedbackDiv.innerHTML = "Correto!"; // Use innerHTML
+                        feedbackDiv.classList.remove('hidden');
+                        feedbackDiv.classList.add('correct');
+                        questionRadios[selectedOptionIndex].parentNode.classList.add('bg-green-100');
+                        disciplineCurrentScore++;
+                    } else {
+                        feedbackDiv.innerHTML = `Incorreto. A resposta correta era: ${q.correct}`; // Use innerHTML
+                        feedbackDiv.classList.remove('hidden');
+                        feedbackDiv.classList.add('incorrect');
+                        questionRadios[selectedOptionIndex].parentNode.classList.add('bg-red-100');
+                        q.options.forEach((option, idx) => {
+                            if (option === q.correct) {
+                                questionRadios[idx].parentNode.classList.add('bg-green-100');
+                            }
+                        });
+                    }
+                    feedbackDiv.classList.remove('hidden'); // Show feedback
+                    if (window.MathJax) { // Typeset feedback content if MathJax is available
+                        MathJax.typesetPromise([feedbackDiv]).catch(function (err) {
+                            console.error('MathJax typesetting feedback failed:', err);
+                        });
+                    }
+                }
+            }
+            // Optional: display discipline-specific score here if desired
+            // alert(`Você acertou ${disciplineCurrentScore} de ${disciplineQuestions.length} questões em ${disciplineName}.`);
+        }
+
+        function checkAllAnswers() {
+            totalScore = 0;
+            let globalQuestionIndex = 0;
+
+            for (const disciplineName in disciplines) {
+                disciplines[disciplineName].forEach((q, localIndex) => {
+                    const selectedOptionIndex = userAnswers[globalQuestionIndex];
+                    const feedbackDiv = document.getElementById(`feedback-${globalQuestionIndex}`);
+                    const questionRadios = document.querySelectorAll(`input[name="question-${globalQuestionIndex}"]`);
+                    const questionItem = document.querySelector(`.question-item[data-global-index="${globalQuestionIndex}"]`);
+
+
+                    // Ensure all radios are disabled and feedback shown for all questions
+                    feedbackDiv.classList.add('hidden'); // Hide feedback to re-evaluate
+                    feedbackDiv.classList.remove('correct', 'incorrect');
+                    questionRadios.forEach(radio => {
+                        radio.parentNode.classList.remove('bg-green-100', 'bg-red-100');
+                        radio.disabled = true; // Ensure all radios are disabled
+                    });
+                    questionItem.classList.remove('border-red-400'); // Remove unanswered border
+
+                    if (selectedOptionIndex === null) {
+                        feedbackDiv.innerHTML = "Você não respondeu a esta questão."; // Use innerHTML
+                        feedbackDiv.classList.remove('hidden');
+                        feedbackDiv.classList.add('incorrect');
+                        questionItem.classList.add('border-red-400'); // Add red border for unanswered
+                    } else {
+                        const selectedAnswerText = q.options[selectedOptionIndex];
+                        if (selectedAnswerText === q.correct) {
+                            totalScore++;
+                            feedbackDiv.innerHTML = "Correto!"; // Use innerHTML
+                            feedbackDiv.classList.remove('hidden');
+                            feedbackDiv.classList.add('correct');
+                            questionRadios[selectedOptionIndex].parentNode.classList.add('bg-green-100');
+                        } else {
+                            feedbackDiv.innerHTML = `Incorreto. A resposta correta era: ${q.correct}`; // Use innerHTML
+                            feedbackDiv.classList.remove('hidden');
+                            feedbackDiv.classList.add('incorrect');
+                            questionRadios[selectedOptionIndex].parentNode.classList.add('bg-red-100');
+                            q.options.forEach((option, idx) => {
+                                if (option === q.correct) {
+                                    questionRadios[idx].parentNode.classList.add('bg-green-100');
+                                }
+                            });
+                        }
+                        feedbackDiv.classList.remove('hidden'); // Show feedback
+                        if (window.MathJax) { // Typeset feedback content if MathJax is available
+                            MathJax.typesetPromise([feedbackDiv]).catch(function (err) {
+                                console.error('MathJax typesetting feedback failed:', err);
+                            });
+                        }
+                    }
+                    globalQuestionIndex++;
+                });
+            }
+            submitAllButton.disabled = true; // Disable the main submit button
+            showFinalResults();
+        }
+
+        function showFinalResults() {
+            finalScreen.classList.remove('hidden');
+            totalQuestionsDisplay.textContent = allQuestions.length;
+            scoreDisplay.textContent = totalScore;
+        }
+
+        function exportQuestions() {
+            let exportContent = `Simulado - Assistente de Tecnologia da Informação (TI)\n\n`;
+            let globalQuestionNumber = 1;
+
+            for (const disciplineName in disciplines) {
+                exportContent += `--- ${disciplineName.toUpperCase()} ---\n\n`;
+                disciplines[disciplineName].forEach((q, localIndex) => {
+                    exportContent += `${globalQuestionNumber}. ${q.question}\n`;
+                    q.options.forEach((option, optIndex) => {
+                        exportContent += `   ${String.fromCharCode(97 + optIndex)}) ${option}\n`;
+                    });
+                    exportContent += `   Resposta Correta: ${q.correct}\n\n`;
+                    globalQuestionNumber++;
+                });
+            }
+
+            const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'simulado_assistente_ti.txt';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        submitAllButton.addEventListener('click', checkAllAnswers);
+        restartButton.addEventListener('click', () => {
+            userAnswers.fill(null);
+            totalScore = 0;
+            finalScreen.classList.add('hidden');
+            submitAllButton.disabled = false; // Re-enable main submit button
+            renderAllQuestions(); // Re-render questions to clear selections and feedback
+        });
+        exportButton.addEventListener('click', exportQuestions);
+
+        // Initial render
+        renderAllQuestions();
+    </script>
+</body>
+</html>
