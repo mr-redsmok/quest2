@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulado Assistente de TI</title>
-    <link href="[https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css](https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css)" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
-        @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap)');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
             background-color: #e2e8f0; /* Light blue-gray background */
@@ -65,6 +65,10 @@
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
+            transition: border-color 0.3s ease; /* Smooth transition for border */
+        }
+        .question-item.border-red-400 {
+            border-color: #f87171; /* Tailwind red-400 */
         }
 
         .question-text {
@@ -161,9 +165,42 @@
         .final-screen-buttons .action-button {
             margin: 0 0.5rem;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-content h3 {
+            color: #1f2937;
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .modal-content p {
+            font-size: 1.125rem;
+            margin-bottom: 1.5rem;
+        }
     </style>
     <!-- MathJax CDN for rendering LaTeX -->
-    <script id="MathJax-script" async src="[https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js](https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js)"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
     <script>
         // MathJax configuration
         window.MathJax = {
@@ -199,6 +236,15 @@
                 <button id="restart-button" class="action-button">Reiniciar Simulado</button>
                 <button id="export-button" class="action-button bg-gray-600 hover:bg-gray-700">Exportar Perguntas</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal para resultados da disciplina -->
+    <div id="discipline-score-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-indigo-700">Resultados da Disciplina</h3>
+            <p>Você acertou <span id="discipline-score-display" class="font-bold text-green-600"></span> de <span id="discipline-total-display" class="font-bold text-indigo-600"></span> questões em <span id="discipline-name-display" class="font-bold text-purple-600"></span>.</p>
+            <button id="close-discipline-modal" class="action-button bg-blue-500 hover:bg-blue-600">Fechar</button>
         </div>
     </div>
 
@@ -671,15 +717,25 @@
         const restartButton = document.getElementById('restart-button');
         const exportButton = document.getElementById('export-button');
 
-        let userAnswers = new Array(90).fill(null); // Global array to store answers, indexed by overall question number
+        // Modal elements for discipline score
+        const disciplineScoreModal = document.getElementById('discipline-score-modal');
+        const disciplineScoreDisplay = document.getElementById('discipline-score-display');
+        const disciplineTotalDisplay = document.getElementById('discipline-total-display');
+        const disciplineNameDisplay = document.getElementById('discipline-name-display');
+        const closeDisciplineModalButton = document.getElementById('close-discipline-modal');
+
+        let userAnswers = []; // Array to store user's selected option *index* for each question
         let totalScore = 0;
-        let disciplineRanges = {}; // Stores { "Discipline Name": { start: index, end: index } }
+        let disciplineRanges = {}; // Stores { "Discipline Name": { start: globalIndex, end: globalIndex } }
 
         // Flatten the questions array for global indexing (needed for userAnswers and iteration)
         const allQuestions = [];
         for (const disciplineName in disciplines) {
             disciplines[disciplineName].forEach(q => allQuestions.push(q));
         }
+
+        // Initialize userAnswers array with nulls for all questions
+        userAnswers = new Array(allQuestions.length).fill(null);
 
         function renderAllQuestions() {
             quizScreen.innerHTML = ''; // Clear previous content
@@ -714,7 +770,7 @@
                         const radio = document.createElement('input');
                         radio.type = 'radio';
                         radio.name = `question-${globalQuestionIndex}`; // Unique name for each question's radios
-                        radio.value = option;
+                        radio.value = option; // Store the option text as value
                         radio.onchange = () => {
                             userAnswers[globalQuestionIndex] = optionIndex; // Store selected option index
                         };
@@ -758,6 +814,7 @@
                 quizScreen.appendChild(disciplineSection);
             }
             // After all questions are rendered, typeset them with MathJax
+            // This call is now safe because it's only made after MathJax is confirmed ready by MathJax.startup.promise
             if (window.MathJax) {
                 MathJax.typesetPromise([quizScreen]).catch(function (err) {
                     console.error('MathJax typesetting failed:', err);
@@ -767,14 +824,15 @@
 
         function checkDisciplineAnswers(disciplineName) {
             const range = disciplineRanges[disciplineName];
-            const disciplineQuestions = disciplines[disciplineName];
-            let disciplineCurrentScore = 0;
+            let disciplineCorrectCount = 0;
+            let disciplineAnsweredCount = 0;
 
             for (let i = range.start; i <= range.end; i++) {
                 const q = allQuestions[i];
                 const selectedOptionIndex = userAnswers[i];
                 const feedbackDiv = document.getElementById(`feedback-${i}`);
                 const questionRadios = document.querySelectorAll(`input[name="question-${i}"]`);
+                const questionItem = document.querySelector(`.question-item[data-global-index="${i}"]`);
 
                 // Reset feedback and styling
                 feedbackDiv.classList.add('hidden');
@@ -783,7 +841,6 @@
                     radio.parentNode.classList.remove('bg-green-100', 'bg-red-100');
                     radio.disabled = true; // Disable radios once checked
                 });
-                const questionItem = document.querySelector(`.question-item[data-global-index="${i}"]`);
                 questionItem.classList.remove('border-red-400'); // Remove unanswered border
 
                 if (selectedOptionIndex === null) {
@@ -791,14 +848,16 @@
                     feedbackDiv.classList.remove('hidden');
                     feedbackDiv.classList.add('incorrect');
                     questionItem.classList.add('border-red-400'); // Add red border for unanswered
+                    // Do not increment disciplineAnsweredCount or disciplineCorrectCount for unanswered questions
                 } else {
+                    disciplineAnsweredCount++; // Increment only if the question was answered
                     const selectedAnswerText = q.options[selectedOptionIndex];
                     if (selectedAnswerText === q.correct) {
                         feedbackDiv.innerHTML = "Correto!"; // Use innerHTML
                         feedbackDiv.classList.remove('hidden');
                         feedbackDiv.classList.add('correct');
                         questionRadios[selectedOptionIndex].parentNode.classList.add('bg-green-100');
-                        disciplineCurrentScore++;
+                        disciplineCorrectCount++;
                     } else {
                         feedbackDiv.innerHTML = `Incorreto. A resposta correta era: ${q.correct}`; // Use innerHTML
                         feedbackDiv.classList.remove('hidden');
@@ -818,74 +877,81 @@
                     }
                 }
             }
-            // Optional: display discipline-specific score here if desired
-            // alert(`Você acertou ${disciplineCurrentScore} de ${disciplineQuestions.length} questões em ${disciplineName}.`);
+            // Display discipline-specific score in the modal
+            disciplineScoreDisplay.textContent = disciplineCorrectCount;
+            disciplineTotalDisplay.textContent = disciplineAnsweredCount; // Display only answered questions for discipline
+            disciplineNameDisplay.textContent = disciplineName;
+            disciplineScoreModal.classList.remove('hidden');
+
+            // Disable the specific discipline check button after checking
+            document.getElementById(`check-discipline-${disciplineName.replace(/\s+/g, '-')}`).disabled = true;
         }
+
 
         function checkAllAnswers() {
             totalScore = 0;
-            let totalAnsweredQuestions = 0; // Nova variável para contar apenas as questões respondidas
-            let globalQuestionIndex = 0;
+            let totalAnsweredQuestions = 0; // New variable to count only answered questions
 
-            for (const disciplineName in disciplines) {
-                disciplines[disciplineName].forEach((q, localIndex) => {
-                    const selectedOptionIndex = userAnswers[globalQuestionIndex];
-                    const feedbackDiv = document.getElementById(`feedback-${globalQuestionIndex}`);
-                    const questionRadios = document.querySelectorAll(`input[name="question-${globalQuestionIndex}"]`);
-                    const questionItem = document.querySelector(`.question-item[data-global-index="${globalQuestionIndex}"]`);
+            // Iterate over all questions to check answers and update UI
+            allQuestions.forEach((q, globalQuestionIndex) => {
+                const selectedOptionIndex = userAnswers[globalQuestionIndex];
+                const feedbackDiv = document.getElementById(`feedback-${globalQuestionIndex}`);
+                const questionRadios = document.querySelectorAll(`input[name="question-${globalQuestionIndex}"]`);
+                const questionItem = document.querySelector(`.question-item[data-global-index="${globalQuestionIndex}"]`);
 
+                // Ensure all radios are disabled and feedback shown for all questions
+                feedbackDiv.classList.add('hidden'); // Hide feedback to re-evaluate
+                feedbackDiv.classList.remove('correct', 'incorrect');
+                questionRadios.forEach(radio => {
+                    radio.parentNode.classList.remove('bg-green-100', 'bg-red-100');
+                    radio.disabled = true; // Ensure all radios are disabled
+                });
+                questionItem.classList.remove('border-red-400'); // Remove unanswered border
 
-                    // Ensure all radios are disabled and feedback shown for all questions
-                    feedbackDiv.classList.add('hidden'); // Hide feedback to re-evaluate
-                    feedbackDiv.classList.remove('correct', 'incorrect');
-                    questionRadios.forEach(radio => {
-                        radio.parentNode.classList.remove('bg-green-100', 'bg-red-100');
-                        radio.disabled = true; // Ensure all radios are disabled
-                    });
-                    questionItem.classList.remove('border-red-400'); // Remove unanswered border
-
-                    if (selectedOptionIndex === null) {
-                        feedbackDiv.innerHTML = "Você não respondeu a esta questão."; // Use innerHTML
+                if (selectedOptionIndex === null) {
+                    feedbackDiv.innerHTML = "Você não respondeu a esta questão."; // Use innerHTML
+                    feedbackDiv.classList.remove('hidden');
+                    feedbackDiv.classList.add('incorrect');
+                    questionItem.classList.add('border-red-400'); // Add red border for unanswered
+                } else {
+                    totalAnsweredQuestions++; // Increment only if the question was answered
+                    const selectedAnswerText = q.options[selectedOptionIndex];
+                    if (selectedAnswerText === q.correct) {
+                        totalScore++;
+                        feedbackDiv.innerHTML = "Correto!"; // Use innerHTML
+                        feedbackDiv.classList.remove('hidden');
+                        feedbackDiv.classList.add('correct');
+                        questionRadios[selectedOptionIndex].parentNode.classList.add('bg-green-100');
+                    } else {
+                        feedbackDiv.innerHTML = `Incorreto. A resposta correta era: ${q.correct}`; // Use innerHTML
                         feedbackDiv.classList.remove('hidden');
                         feedbackDiv.classList.add('incorrect');
-                        questionItem.classList.add('border-red-400'); // Add red border for unanswered
-                    } else {
-                        totalAnsweredQuestions++; // Incrementa apenas se a questão foi respondida
-                        const selectedAnswerText = q.options[selectedOptionIndex];
-                        if (selectedAnswerText === q.correct) {
-                            totalScore++;
-                            feedbackDiv.innerHTML = "Correto!"; // Use innerHTML
-                            feedbackDiv.classList.remove('hidden');
-                            feedbackDiv.classList.add('correct');
-                            questionRadios[selectedOptionIndex].parentNode.classList.add('bg-green-100');
-                        } else {
-                            feedbackDiv.innerHTML = `Incorreto. A resposta correta era: ${q.correct}`; // Use innerHTML
-                            feedbackDiv.classList.remove('hidden');
-                            feedbackDiv.classList.add('incorrect');
-                            questionRadios[selectedOptionIndex].parentNode.classList.add('bg-red-100');
-                            q.options.forEach((option, idx) => {
-                                if (option === q.correct) {
-                                    questionRadios[idx].parentNode.classList.add('bg-green-100');
-                                }
-                            });
-                        }
-                        feedbackDiv.classList.remove('hidden'); // Show feedback
-                        if (window.MathJax) { // Typeset feedback content if MathJax is available
-                            MathJax.typesetPromise([feedbackDiv]).catch(function (err) {
-                                console.error('MathJax typesetting feedback failed:', err);
-                            });
-                        }
+                        questionRadios[selectedOptionIndex].parentNode.classList.add('bg-red-100');
+                        q.options.forEach((option, idx) => {
+                            if (option === q.correct) {
+                                questionRadios[idx].parentNode.classList.add('bg-green-100');
+                            }
+                        });
                     }
-                    globalQuestionIndex++;
-                });
-            }
+                    feedbackDiv.classList.remove('hidden'); // Show feedback
+                    if (window.MathJax) { // Typeset feedback content if MathJax is available
+                        MathJax.typesetPromise([feedbackDiv]).catch(function (err) {
+                            console.error('MathJax typesetting feedback failed:', err);
+                        });
+                    }
+                }
+            });
             submitAllButton.disabled = true; // Disable the main submit button
+            // Disable all discipline check buttons
+            for (const disciplineName in disciplines) {
+                document.getElementById(`check-discipline-${disciplineName.replace(/\s+/g, '-')}`).disabled = true;
+            }
             showFinalResults(totalAnsweredQuestions); // Pass the count of answered questions
         }
 
         function showFinalResults(answeredCount) {
             finalScreen.classList.remove('hidden');
-            totalQuestionsDisplay.textContent = answeredCount; // Exibe o número de questões respondidas
+            totalQuestionsDisplay.textContent = answeredCount; // Display the number of answered questions
             scoreDisplay.textContent = totalScore;
         }
 
@@ -896,11 +962,15 @@
             for (const disciplineName in disciplines) {
                 exportContent += `--- ${disciplineName.toUpperCase()} ---\n\n`;
                 disciplines[disciplineName].forEach((q, localIndex) => {
-                    exportContent += `${globalQuestionNumber}. ${q.question}\n`;
+                    // Remove HTML bold tags and MathJax delimiters for plain text export
+                    let questionText = q.question.replace(/<\/?b>/g, '').replace(/\$/g, '');
+                    exportContent += `${globalQuestionNumber}. ${questionText}\n`;
                     q.options.forEach((option, optIndex) => {
-                        exportContent += `   ${String.fromCharCode(97 + optIndex)}) ${option}\n`;
+                        let optionText = option.replace(/<\/?b>/g, '').replace(/\$/g, '');
+                        exportContent += `    ${String.fromCharCode(97 + optIndex)}) ${optionText}\n`;
                     });
-                    exportContent += `   Resposta Correta: ${q.correct}\n\n`;
+                    let correctText = q.correct.replace(/<\/?b>/g, '').replace(/\$/g, '');
+                    exportContent += `    Resposta Correta: ${correctText}\n\n`;
                     globalQuestionNumber++;
                 });
             }
@@ -911,9 +981,10 @@
             link.download = 'simulado_assistente_ti.txt';
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
+            document.body.removeChild(link); // Remove the link after click
         }
 
+        // Event Listeners
         submitAllButton.addEventListener('click', checkAllAnswers);
         restartButton.addEventListener('click', () => {
             userAnswers.fill(null);
@@ -923,9 +994,25 @@
             renderAllQuestions(); // Re-render questions to clear selections and feedback
         });
         exportButton.addEventListener('click', exportQuestions);
+        closeDisciplineModalButton.addEventListener('click', () => {
+            disciplineScoreModal.classList.add('hidden');
+        });
 
         // Initial render
-        renderAllQuestions();
+        // This ensures renderAllQuestions is called only after MathJax is fully loaded and ready.
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
+                MathJax.startup.promise.then(() => {
+                    renderAllQuestions();
+                }).catch(err => {
+                    console.error('MathJax startup promise failed:', err);
+                    renderAllQuestions(); // Render even if MathJax fails, but without typesetting
+                });
+            } else {
+                console.warn('MathJax not fully loaded or MathJax.startup.promise not found. Rendering questions without MathJax typesetting initially.');
+                renderAllQuestions();
+            }
+        });
     </script>
 </body>
 </html>
